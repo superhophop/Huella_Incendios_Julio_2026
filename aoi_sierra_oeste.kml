@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>AOI Sierra Oeste de Madrid</name>
+<Style id="aoi"><LineStyle><color>ff00ffff</color><width>3</width></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+<Placemark><name>AOI (lon -4.46 to -4.17, lat 40.26 to 40.46)</name><styleUrl>#aoi</styleUrl>
+<Polygon><outerBoundaryIs><LinearRing><coordinates>
+-4.46,40.26,0 -4.17,40.26,0 -4.17,40.46,0 -4.46,40.46,0 -4.46,40.26,0
+</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark></Document></kml>

@@ -1,0 +1,22 @@
+# Packages for the incendio_2026 notebooks.
+# Rebuild the environment on any computer with:
+#   python -m venv .venv
+#   .venv\Scripts\python -m pip install -r requirements.txt
+
+# satellite data access (Microsoft Planetary Computer)
+pystac-client
+planetary-computer
+odc-stac
+# raster + vector GIS
+rioxarray
+rasterio
+geopandas
+scipy
+# tables, plots, interactive maps
+pandas
+matplotlib
+folium
+requests
+# notebook support (lets VS Code run cells in this environment)
+ipykernel
+ipywidgets

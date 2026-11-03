@@ -1,0 +1,21 @@
+# Secretos: nunca publicar (clave de NASA FIRMS)
+.env
+
+# Entorno de Python y cachés
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+
+# Resultados y datos descargados: se regeneran con los cuadernos (pesan varios GB)
+outputs/
+outputs_madrid_avila/
+outputs_notebooks/
+outputs_s2/
+outputs_sentinel2/
+data/
+data_sierra_oeste/
+data_downloads/
+
+# Proyecto de ArcGIS Pro y ajustes locales del editor
+MyProject/
+.vscode/
