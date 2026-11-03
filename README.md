@@ -110,10 +110,3 @@ Una ejecución completa de los cuadernos tarda unos 25 minutos.
 - Meteorología **ERA5** vía **Open-Meteo**
 
 Si reutilizas los resultados, cita estas fuentes.
-
-## Origen
-
-Este proyecto parte de la práctica *Aplicación 3 – Detección de cambios (Sierra de Gata)* de un curso de
-SIG, y la amplía a un incendio real de 2026 con validación, impactos y avance diario. La primera versión,
-con scripts independientes y solo la parte de Madrid, se describe (en inglés) en
-[`docs/scripts_v1.md`](docs/scripts_v1.md).

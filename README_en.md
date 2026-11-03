@@ -112,10 +112,3 @@ A full run of the notebooks takes about 25 minutes.
 - **ERA5** weather via **Open-Meteo**
 
 If you reuse the results, please cite these sources.
-
-## Origin
-
-This project started from the practical *Aplicación 3 – Detección de cambios (Sierra de Gata)* of a GIS
-course, and extends it to a real 2026 fire with validation, impacts and daily spread. The first version,
-with standalone scripts covering only the Madrid side, is described in
-[`docs/scripts_v1.md`](docs/scripts_v1.md).
