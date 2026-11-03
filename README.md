@@ -1,3 +1,5 @@
+🇪🇸 Español | 🇬🇧 [English](README_en.md)
+
 # Huella de los incendios de julio de 2026 en Ávila, Madrid y Toledo
 
 Cartografía de la superficie quemada por el complejo de incendios de Burgohondo, Almorox y la Sierra Oeste
@@ -113,4 +115,5 @@ Si reutilizas los resultados, cita estas fuentes.
 
 Este proyecto parte de la práctica *Aplicación 3 – Detección de cambios (Sierra de Gata)* de un curso de
 SIG, y la amplía a un incendio real de 2026 con validación, impactos y avance diario. La primera versión,
-con scripts independientes y solo la parte de Madrid, se describe en [`README_en.md`](README_en.md).
+con scripts independientes y solo la parte de Madrid, se describe (en inglés) en
+[`docs/scripts_v1.md`](docs/scripts_v1.md).

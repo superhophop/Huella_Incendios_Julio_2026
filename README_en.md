@@ -1,174 +1,121 @@
+🇪🇸 [Español](README.md) | 🇬🇧 English
+
 # Burn footprint of the July 2026 fires in Ávila, Madrid and Toledo
 
-Pre-fire and post-fire burn mapping of the fire complex in central Spain, using Sentinel-2 images
-(24 June and 8 August 2026). The method automates the change-detection workflow of the course
-practical *Aplicación 3 – Detección de cambios (Sierra de Gata)*: what was done step by step in
-ArcGIS Pro (Raster Calculator, Composite Bands, Reclassify, Majority Filter, Raster to Polygon,
-Merge, Dissolve, Layer To KML) runs here in Python.
+Mapping of the area burned by the Burgohondo, Almorox and Sierra Oeste de Madrid fire complex, using
+**Sentinel-2** satellite images taken before (24 June) and after (8 August 2026) the fire. The whole
+workflow is in commented, step-by-step Python notebooks, so anyone can repeat it, check it or adapt it to
+another fire.
 
-## Results
+![Burn footprint](docs/img/step4_footprint.png)
+
+## Main results
 
 | Measure | Result |
 |---|---|
-| Study area (AOI) | lon −4.90…−4.10, lat 40.20…40.56, 2,714.64 km² |
-| Mapped burn footprint | **618.03 km²** (61,803 ha), with no burned pixels at the AOI edge |
-| By province | Ávila 386.07 km², Madrid 219.41 km², Toledo 12.54 km² |
-| Municipalities touched | 30 of 78 |
-| Separability | dNBR separability M = 1.513 (above 1 means good separation) |
-| Official perimeter (EFFIS) | 641.02 km² in 7 fires; 97.9% of the footprint lies inside it, 94.3% of it is captured, Dice 0.961 |
-| Natura 2000 | 502.73 km² (81.3% of the footprint) inside protected sites; EFFIS gives 81.7% |
-| Spread (VIIRS hotspots) | First detection 22 July 15:35 local; peak day 25 July, about 200 km² |
+| Burned area (Sentinel-2) | **618.03 km²** (61,803 ha) |
+| By province | Ávila 386.07 km² · Madrid 219.41 km² · Toledo 12.54 km² |
+| Municipalities affected | 30 of the 78 in the study area |
+| Agreement with the official European perimeter (EFFIS) | 97.9% of the footprint inside EFFIS; finds 94.3% of its area; Dice score **0.961** |
+| Natura 2000 | 502.73 km² (81.3% of the footprint) inside protected sites |
+| Severity (dNBR) | 12.4% high · 25.5% moderate-high · 33.5% moderate-low · 27.9% low |
+| First satellite detection | 22 July, 15:35 local time (VIIRS) |
+| Day of fastest spread | 25 July, about 200 km² in a single day |
 
-The footprint agrees closely with the official EFFIS perimeters (notebook 07). Press figures (more than
-500 km² in Ávila and 268.6 km² in Madrid) are higher than both maps and come from other sources and dates.
+The footprint matches the EFFIS perimeters (641 km²) almost completely. Figures published in the press
+(more than 500 km² in Ávila and 268.6 km² in Madrid) are higher than both maps and come from other sources
+and dates.
 
-## 0. Notebooks (recommended way to work)
-
-The workflow is in `notebooks/` as step-by-step teaching notebooks (`00_start_here` → `08_progression`),
-with shared settings in `notebooks/common.py` and results written to `outputs_madrid_avila/`.
-`notebooks/fetch_overlays.py` downloads the layers that notebook 05 overlays.
-
-Notebook 08 needs a free NASA FIRMS key (https://firms.modaps.eosdis.nasa.gov/api/map_key/). Put it in
-a file called `.env` in the project folder, as `FIRMS_MAP_KEY=your_key`. `.env` is listed in `.gitignore`,
-so the key is never published.
-
-Open the `incendio_2026` folder in VS Code and the notebooks use the project's `.venv` automatically.
-To rebuild that environment:
-
-```powershell
-& "$env:USERPROFILE\anaconda3\python.exe" -m venv .venv
-.venv\Scripts\python -m pip install -r requirements.txt
-```
-
-The standalone scripts described below are the earlier version of this project. They still default
-to the smaller Madrid-only area.
-
-## 1. Install (scripts)
-
-```bash
-conda create -n burn -c conda-forge python=3.11 pystac-client planetary-computer \
-    odc-stac rioxarray rasterio geopandas scipy matplotlib pandas requests
-conda activate burn
-```
-
-No account needed. Landsat 8/9 Collection 2 Level-2 (the same L2SP product as in the course)
-and Sentinel-2 L2A are read straight from Microsoft Planetary Computer, so there is no
-EarthExplorer download or .tar unpacking.
-
-## 2. Run
-
-```bash
-python burn_footprint.py                     # Landsat 8/9, 30 m (default)
-python burn_footprint.py --sensor sentinel2  # Sentinel-2, 20 m, more frequent revisit
-```
-
-Defaults for the 2026 fire:
-
-| Setting | Value |
+| Comparison with EFFIS | Estimated daily spread |
 |---|---|
-| AOI | lon −4.46…−4.17, lat 40.26…40.46 (San Martín de Valdeiglesias, Pelayos de la Presa, Navas del Rey, Chapinería, Villa del Prado, Aldea del Fresno) |
-| Ignition | 22 Jul 2026 (Almorox; San Martín de Valdeiglesias on 23 Jul) |
-| Pre-fire scene | cloud-free date closest to **24 Jun 2026** (ignition − 28 days), searched ±7 days, widening up to ±28 |
-| Post-fire scene | earliest cloud-free date from 30 Jul to 15 Sep, i.e. Key & Benson's *initial assessment* once the fire is out |
-| Cloud-free | ≤ 1 % cloud/shadow pixels **inside the AOI** (Landsat QA_PIXEL bits 1–4) and ≥ 99 % data coverage |
-| Projection | WGS 84 / UTM 30N (EPSG:32630), the Madrid equivalent of the course's UTM 29N |
+| ![Comparison with EFFIS](docs/img/step7_validation_map.png) | ![Daily spread](docs/img/step8_progression.png) |
 
-Landsat 8 + 9 together revisit every 8 days. If the ±7-day window has no clear scene, the
-script widens it automatically. The candidate dates and their AOI cloud % are printed, and
-the chosen scene IDs are stored in `summary.json`.
+## How it works
 
-## 3. How each course step maps to the script
+The method is **change detection**: vegetation before and after the fire is compared with four spectral
+indices (NBR, NDVI, BAI and GEMI). A pixel is marked as burned when several indices agree, and the result is
+then cleaned (majority filter, removal of small patches). It automates in Python the procedure done by hand
+in ArcGIS Pro in class (Raster Calculator, Reclassify, Majority Filter, Raster to Polygon, Dissolve).
 
-| Course step | Script | Output |
+| Notebook | What it does | Main output |
 |---|---|---|
-| 4. DN → reflectance: `(SR_Bx × 0.0000275) − 0.2`, then `Con(x<0, 0, x)` | `to_reflectance()` | – |
-| 5.1 5-4-3 false-colour IR | `fc543()` (R=B5 NIR, G=B4 Red, B=B3 Green) | `01_false_color_543.png` |
-| 5.1 NIR change composite (R: NIR pre, G: NIR post, B: NIR pre) | – | `02_nir_change_composite.png` (purple = loss) |
-| 5.2-A NDVI + Chuvieco (2015) reclassification | `ndvi()`, `classify()` | `03_ndvi_classes.png`, `ndvi_class_areas.csv` |
-| 5.2-B ΔNDVI = NDVIpost − NDVIpre | `compute_indices()` | `dNDVI.tif` |
-| 5.2-C NBR = (B5 − B7)/(B5 + B7) | `nbr()` | `NBR_pre/post.tif` |
-| 5.2-D/E BAI (Martín 1998), ΔBAI | `bai()` | `BAI_*.tif`, `dBAI.tif` |
-| 5.2-F/G GEMI (Pinty & Verstraete 1992), ΔGEMI | `gemi()` | `GEMI_*.tif`, `dGEMI.tif` |
-| 6. Segmentation, Bastarrika et al. (2011): ΔNDVI < −0.17767, NBRpost < −0.15006, ΔBAI > 144.3835, ΔGEMI < −0.11578 | `BASTARRIKA`, `threshold()` | `05_segmentations.png` |
-| 6. Validation: M = \|μb − μu\| / (σb + σu) | `separability_m()` | `separability_M.csv` |
-| 6. Majority Filter (8 neighbours, MAJORITY) | `majority_filter()` | applied to every segmentation |
-| 6. Raster to Polygon + Sum of area per index | `vectorise()` | `index_areas.csv`, GPKG layers `segmentation_*` |
-| 7. Merge + manual clean-up + Dissolve | `merge_and_clean()` | `burn_footprint.gpkg` → `footprint_dissolved` |
-| 7. Layer To KML (Google Earth) | `write_kml()` | `burn_footprint.kml` |
-| Compare with the official perimeter (INFOEX / Copernicus EMS in the course) | `--reference` | IoU, omission %, commission % in `summary.json` |
+| `00_start_here` | Checks the environment and shows the study area | Map of the area |
+| `01_find_scenes` | Finds cloud-free Sentinel-2 images before and after | `step1_scenes.json` |
+| `02_reflectance` | Downloads the bands and masks clouds and water | Pre and post reflectance |
+| `03_indices` | Computes NBR, NDVI, BAI and GEMI and their differences | `dNBR.tif` and others |
+| `04_footprint` | Thresholds, voting between indices and clean-up | `burn_footprint.gpkg` / `.kml` |
+| `05_impact` | Severity, land cover, municipalities, buildings, Natura 2000 | `step5_impact.json` |
+| `06_fire_weather` | Weather on the ignition days vs the 1991–2020 normal | `step6_fire_weather.png` |
+| `07_validation_effis` | Comparison with the official EFFIS perimeters | `step7_validation.json` |
+| `08_progression` | Day-by-day spread from NASA FIRMS hotspots | `step8_progression.json` |
 
-Extras beyond the course:
+Shared settings (study area, dates, thresholds) are in `notebooks/common.py`. Change them there and every
+notebook uses them.
 
-- dNBR burn severity (USGS / Key & Benson 2006): `07_severity.png` and `severity_areas.csv`
-- burned area by land cover: `landcover_impact.csv`
-- fire weather against the 1991–2020 climatology: `09_fire_weather.png`
+## How to reproduce it
 
-### Threshold sets: course (Bastarrika) vs scene-calibrated (default)
+1. **Install Python** (tested with version 3.14) and create the environment:
 
-Both sets are always computed and reported side by side (`index_areas.csv`,
-`separability_M.csv`, `05_segmentations_bastarrika.png`, `05_segmentations_scene.png`).
+   ```powershell
+   python -m venv .venv
+   .venv\Scripts\python -m pip install -r requirements.txt
+   ```
 
-- **`bastarrika`**: the course's fixed values. They were calibrated on a dense shrub fire,
-  and in the 2026 Sierra Oeste run they caught only the intense core: 119 km².
-- **`scene`** (default): each index's threshold = median ± 3·MAD (robust standard deviation)
-  of this image pair's own unburned pixels (the USGS "unburned" dNBR class). This catches
-  low-severity grass and dehesa burns. Robust statistics stop a few extreme pixels (terrain
-  shadow, reservoir edges) from inflating the thresholds. In the 2026 run it gave 279.5 km²
-  (Landsat 8, 30 m) and 259.8 km² (Sentinel-2, 10 m), with < 1 % false positives in unburned
-  control zones (SW mountains, SE farmland).
+2. **Get a free NASA FIRMS key** (only for notebook 08) at
+   https://firms.modaps.eosdis.nasa.gov/api/map_key/ and save it in a file called `.env` in the project
+   folder:
 
-Use `--thresholds bastarrika` to reproduce the course exactly.
+   ```
+   FIRMS_MAP_KEY=your_key
+   ```
 
-### How the manual clean-up is automated
+   `.env` is listed in `.gitignore`, so the key is never published.
 
-In the course, polygons outside the real burn (red, healthy patches in the 5-4-3 composite)
-were deleted by hand after the Merge. The script decides this with the indices themselves:
+3. **Download the reference layers** (municipalities, Natura 2000, settlements, rivers and Catastro
+   buildings) after notebook 04, from the `notebooks` folder:
 
-- **Vegetation-loss indices:** ΔNDVI and ΔGEMI use only red and NIR. A cereal field
-  harvested in July looks burned to them.
-- **Char indices:** NBR post (SWIR) and ΔBAI (distance to the charcoal spectral point)
-  respond to char, not to harvest.
-- **The rule:** a pixel enters the footprint when ≥ `--pixel-votes` (default 2) of ΔNDVI,
-  ΔGEMI, ΔBAI and dNBR flag it. A patch is kept only if it has a core of ≥ 1 ha where
-  ≥ `--min-votes` (default 3) agree **and** there is strong char (ΔBAI > 144.38, the
-  course value).
-- **Why it works:** low-severity grass burns and fresh stubble look alike spectrally, but a
-  real fire patch always contains some truly charred ground and a harvested field does not.
+   ```powershell
+   ..\.venv\Scripts\python fetch_overlays.py
+   ```
 
-In the synthetic test this kept 100 % of a low-severity burn ring and removed 100 % of an
-isolated harvested field. A harvested field that *touches* the burn can still be included,
-so check the 5-4-3 composite along farmland edges.
+4. **Run the notebooks in order**, from 00 to 08. In VS Code, open the project folder and choose the
+   `.venv` environment. Everything is downloaded from public services (Microsoft Planetary Computer, EFFIS,
+   NASA FIRMS, Open-Meteo). Results are saved in `outputs_madrid_avila/`.
 
-## 4. Options
+5. **Optional:** `python estimate_emissions.py` (in `notebooks`) estimates the carbon monoxide and particles
+   emitted, from the burned area of each land-cover type.
 
-```bash
---method merge|dNDVI|NBR_post|dBAI|dGEMI|dNBR   # final footprint from one index or the merge
---min-votes 3                                   # stricter merge
---majority-neighbors 4 --majority-threshold half
---pre-date 2026-06-24 --post-date 2026-08-07    # force scenes
---reference effis_or_ems_perimeter.shp          # validation
---overlay municipios=recintos_municipales.shp   # burned km² per municipality
---overlay edificios=catastro_buildings.gpkg     # buildings inside the footprint
---overlay natura=natura2000.shp                 # protected habitat burned
---bbox -4.50 40.25 -4.10 40.50                  # different AOI
-```
+A full run of the notebooks takes about 25 minutes.
 
-## 5. Data sources for overlays and validation
+## Limitations
 
-- **Official perimeter:** EFFIS burnt areas (Copernicus), or the Copernicus EMS Rapid
-  Mapping delineation, the same type of product shown at the end of the course
-- **Municipalities:** CNIG *Líneas límite municipales*
-- **Buildings:** Catastro INSPIRE Buildings (ATOM feed per municipality)
-- **Protected areas:** Natura 2000 (MITECO / EEA)
-- **National fire statistics:** MITECO *Estadísticas de incendios forestales* and its *avances informativos*
+- **The footprint is a satellite estimate**, with 10 to 20 m pixels. It does not replace the official
+  perimeter.
+- **The daily spread is approximate.** Each area gets the date of the nearest hotspot; satellites pass about
+  six times a day and smoke can hide hotspots.
+- **Emissions are an order of magnitude**, not a measurement: CO ≈ 247,600 t (5–95% range: 36,500 to
+  772,600 t); PM2.5 ≈ 39,700 t (3,900 to 134,000 t). They use average factors from the literature, not ones
+  specific to Mediterranean holm oak and pine forest.
+- **The air quality data** in the interactive dashboard are provisional (European Environment Agency), and
+  their processing is not yet included in this repository.
+- **The weather** in notebook 06 is for a single point at the centre of the study area.
 
-## Caveats
+## Data sources
 
-- The scripts' default AOI covers only the Madrid side. The notebooks cover the whole complex.
-- The Bastarrika thresholds were calibrated on Landsat TM in Mediterranean areas. Check the
-  M values: if an index has M < 1 in your scene, its threshold is not separating the classes
-  well, so drop it (`--method`) or adjust it.
-- Key & Benson's *extended assessment* (post scene in the next growing season, June–July 2027)
-  cannot be made yet. Rerun the script with `--post-start 2027-06-01 --post-end 2027-07-31`
-  next summer to see delayed mortality and regrowth.
-- Burned houses are only partly visible at 30 m. Use the Catastro overlay to count buildings.
+- **Copernicus Sentinel-2** L2A images, via Microsoft Planetary Computer
+- Fire perimeters from **EFFIS** (Copernicus, European Forest Fire Information System)
+- **VIIRS** hotspots from **NASA FIRMS**
+- **ESA WorldCover 2021** land cover
+- Municipal boundaries and settlements from **IGN** (Spain's national mapping agency); buildings from
+  **Catastro** (INSPIRE)
+- **Natura 2000** sites (European Environment Agency)
+- **ERA5** weather via **Open-Meteo**
+
+If you reuse the results, please cite these sources.
+
+## Origin
+
+This project started from the practical *Aplicación 3 – Detección de cambios (Sierra de Gata)* of a GIS
+course, and extends it to a real 2026 fire with validation, impacts and daily spread. The first version,
+with standalone scripts covering only the Madrid side, is described in
+[`docs/scripts_v1.md`](docs/scripts_v1.md).
