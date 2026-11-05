@@ -12,7 +12,7 @@ outputs_madrid_avila/
 outputs_notebooks/
 outputs_s2/
 outputs_sentinel2/
-data/
+/data/
 data_sierra_oeste/
 data_downloads/
 

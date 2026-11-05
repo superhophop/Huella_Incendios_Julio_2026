@@ -7,6 +7,8 @@ de Madrid, a partir de imágenes del satélite **Sentinel-2** tomadas antes (24 
 de 2026) del fuego. Todo el flujo está en cuadernos de Python, paso a paso y comentados, para que cualquiera
 pueda repetirlo, comprobarlo o adaptarlo a otro incendio.
 
+🗺️ **[Mapa interactivo del avance del fuego](https://superhophop.github.io/Huella_Incendios_Julio_2026/)**
+
 ![Huella del incendio](docs/img/step4_footprint.png)
 
 ## Resultados principales
@@ -84,6 +86,9 @@ todos los cuadernos los usan.
 
 5. **Opcional:** `python estimate_emissions.py` (en `notebooks`) estima el monóxido de carbono y las
    partículas emitidas a partir de la superficie quemada por tipo de cubierta.
+
+6. **Mapa web:** `python build_webmap.py` (en `notebooks`) regenera los datos del mapa interactivo en
+   `docs/data/`. La página `docs/index.html` se publica con GitHub Pages.
 
 Una ejecución completa de los cuadernos tarda unos 25 minutos.
 

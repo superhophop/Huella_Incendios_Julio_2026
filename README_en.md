@@ -7,6 +7,8 @@ Mapping of the area burned by the Burgohondo, Almorox and Sierra Oeste de Madrid
 workflow is in commented, step-by-step Python notebooks, so anyone can repeat it, check it or adapt it to
 another fire.
 
+🗺️ **[Interactive map of the fire's spread](https://superhophop.github.io/Huella_Incendios_Julio_2026/)** (in Spanish)
+
 ![Burn footprint](docs/img/step4_footprint.png)
 
 ## Main results
@@ -84,6 +86,9 @@ notebook uses them.
 
 5. **Optional:** `python estimate_emissions.py` (in `notebooks`) estimates the carbon monoxide and particles
    emitted, from the burned area of each land-cover type.
+
+6. **Web map:** `python build_webmap.py` (in `notebooks`) rebuilds the interactive map data in
+   `docs/data/`. The page `docs/index.html` is published with GitHub Pages.
 
 A full run of the notebooks takes about 25 minutes.
 

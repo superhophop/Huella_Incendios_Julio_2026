@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Huella de los incendios de julio de 2026 · Ávila, Madrid y Toledo</title>
+<meta name="description" content="Mapa interactivo de la superficie quemada por los incendios de julio de 2026 en Ávila, Madrid y Toledo, a partir de imágenes Sentinel-2 y focos de calor de NASA FIRMS.">
+<meta property="og:title" content="Huella de los incendios de julio de 2026 en Ávila, Madrid y Toledo">
+<meta property="og:description" content="618 km² quemados. Mapa interactivo del avance del fuego día a día, con imágenes Sentinel-2 y focos de calor de NASA FIRMS.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root {
+  --bg: #f6f4f1; --panel: #ffffff; --fg: #1d1b19; --muted: #6b655f; --line: #e3ded8;
+  --accent: #d7301f; --shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #161412; --panel: #211e1b; --fg: #f1ece6; --muted: #a39b92; --line: #37322d; --accent: #ff6a3d; --shadow: none; }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--fg); }
+body { font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 24px 16px 40px; }
+h1 { font: 600 clamp(1.6rem, 4vw, 2.4rem)/1.15 Georgia, "Times New Roman", serif; margin: 0 0 8px; letter-spacing: -.01em; }
+.lede { color: var(--muted); margin: 0 0 20px; max-width: 70ch; }
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.kpi, .card, .below > *, .kpis > * { min-width: 0; }
+.kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; box-shadow: var(--shadow); min-width: 0; }
+.kpi b { display: block; font: 600 clamp(1.4rem, 3vw, 1.9rem)/1.1 Georgia, serif; color: var(--accent); font-variant-numeric: tabular-nums; }
+.kpi > span { display: block; font-size: .85rem; color: var(--muted); margin-top: 4px; }
+@media (max-width: 760px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+
+.mapbox { position: relative; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); }
+#map { height: min(72vh, 680px); min-height: 420px; background: #20262b; }
+.panel { position: absolute; z-index: 800; background: rgba(20,18,16,.86); color: #f4efe9; border-radius: 10px; padding: 10px 12px; font-size: .85rem; backdrop-filter: blur(4px); }
+.timeline { left: 12px; right: 12px; bottom: 28px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 12px; align-items: center; }
+.timeline button { grid-row: span 2; width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--accent); color: #fff; font-size: 18px; cursor: pointer; }
+.timeline button:focus-visible, .timeline input:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.readout { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; }
+.readout strong { font-size: 1.05rem; }
+.readout em { font-style: normal; color: #ffb38a; font-variant-numeric: tabular-nums; }
+.slider { display: grid; gap: 2px; }
+.slider input { width: 100%; accent-color: var(--accent); margin: 0; }
+.ticks { display: grid; grid-template-columns: repeat(var(--n), 1fr); font-size: .7rem; color: #cfc6bc; }
+.ticks i { font-style: normal; text-align: center; border-top: 4px solid; padding-top: 2px; }
+.layers { top: 12px; right: 12px; display: grid; gap: 4px; }
+.layers label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+.layers .sep { border-top: 1px solid rgba(255,255,255,.2); margin: 4px 0 2px; }
+.hint { top: 12px; left: 56px; max-width: 260px; }
+@media (max-width: 600px) {
+  .hint { display: none; }
+  .layers { font-size: .78rem; padding: 8px 10px; }
+  .timeline { left: 8px; right: 8px; bottom: 22px; }
+  .ticks i:nth-child(even) { color: transparent; }
+}
+.leaflet-popup-content { font-size: .85rem; margin: 10px 12px; }
+
+.below { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; margin-top: 16px; }
+@media (max-width: 760px) { .below { grid-template-columns: 1fr; } }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; box-shadow: var(--shadow); }
+.card h2 { font: 600 1.1rem/1.3 Georgia, serif; margin: 0 0 8px; }
+.card p { margin: 0 0 8px; }
+.card ul { margin: 0; padding-left: 18px; }
+.muted { color: var(--muted); font-size: .9rem; }
+a { color: var(--accent); }
+.cta { display: inline-block; margin-top: 6px; padding: 8px 14px; border-radius: 8px; background: var(--accent); color: #fff; text-decoration: none; font-weight: 600; }
+footer { margin-top: 20px; font-size: .8rem; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Huella de los incendios de julio de 2026 en Ávila, Madrid y Toledo</h1>
+  <p class="lede">Superficie quemada por el complejo de incendios de Burgohondo, Almorox y la Sierra Oeste de Madrid, medida con imágenes del satélite Sentinel-2 de antes y después del fuego. Mueve el control de los días para ver cómo avanzó.</p>
+
+  <section class="kpis" aria-label="Cifras principales">
+    <div class="kpi"><b id="k-area">618 km²</b><span>quemados (<span id="k-ha">61.803</span> ha)</span></div>
+    <div class="kpi"><b id="k-peak">200 km²</b><span>en un solo día, el <span id="k-peak-day">25 de julio</span></span></div>
+    <div class="kpi"><b id="k-natura">81 %</b><span>dentro de la Red Natura 2000</span></div>
+    <div class="kpi"><b id="k-dice">0,961</b><span>coincidencia con el perímetro oficial EFFIS (índice de Dice, de 0 a 1)</span></div>
+  </section>
+
+  <div class="mapbox">
+    <div id="map" role="region" aria-label="Mapa del avance del incendio"></div>
+    <div class="panel layers" aria-label="Capas">
+      <label><input type="radio" name="base" value="sat" checked> Satélite</label>
+      <label><input type="radio" name="base" value="map"> Mapa</label>
+      <div class="sep"></div>
+      <label><input type="checkbox" id="l-area" checked> Zona quemada por día</label>
+      <label><input type="checkbox" id="l-hs" checked> Focos de calor</label>
+      <label><input type="checkbox" id="l-fp" checked> Huella final</label>
+    </div>
+    <div class="panel hint">Toca un foco para ver la hora y el satélite. La estrella marca la primera detección.</div>
+    <div class="panel timeline">
+      <button id="play" type="button" aria-label="Reproducir el avance">▶</button>
+      <div class="readout" aria-live="polite"><strong id="r-day">—</strong><span>quemados hasta ese día: <em id="r-cum">—</em></span><span>focos ese día: <em id="r-hs">—</em></span></div>
+      <div class="slider">
+        <input id="day" type="range" min="1" max="10" step="1" value="10" aria-label="Día">
+        <div class="ticks" id="ticks"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="below">
+    <section class="card">
+      <h2>Cómo se hizo</h2>
+      <p>Se comparan dos imágenes Sentinel-2 (24 de junio y 8 de agosto de 2026) con cuatro índices espectrales (NBR, NDVI, BAI y GEMI). Un píxel se marca como quemado cuando varios índices coinciden. El avance diario se estima asignando a cada zona la fecha del foco de calor de NASA FIRMS (satélites VIIRS) más cercano.</p>
+      <p class="muted">Por provincia: <span id="k-prov">Ávila 386 km² · Madrid 219 km² · Toledo 13 km²</span>. Afecta a <span id="k-munis">30</span> municipios. Primera detección por satélite: <span id="k-first">22 de julio, 15:35</span>.</p>
+      <p class="muted">El avance diario es aproximado: los satélites pasan unas seis veces al día y el humo puede ocultar focos.</p>
+    </section>
+    <section class="card">
+      <h2>Código abierto y reproducible</h2>
+      <p>Todo el análisis está en cuadernos de Python comentados paso a paso, con datos públicos.</p>
+      <a class="cta" href="https://github.com/superhophop/Huella_Incendios_Julio_2026">Ver el código en GitHub</a>
+      <p class="muted" style="margin-top:10px">Fuentes: Copernicus Sentinel-2, EFFIS, NASA FIRMS, ESA WorldCover, IGN, Catastro, Red Natura 2000.</p>
+    </section>
+  </div>
+  <footer>Estimación por satélite; no sustituye al perímetro oficial. Contiene datos modificados de Copernicus Sentinel-2 (2026).</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const nf = (v, d = 0) => Number(v).toLocaleString('es-ES', { minimumFractionDigits: d, maximumFractionDigits: d });
+const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const longDate = (iso) => { const [, m, d] = iso.split('-').map(Number); return `${d} de ${MONTHS[m - 1]}`; };
+
+Promise.all(['summary.json', 'footprint.geojson', 'hotspots.json'].map((f) => fetch(`data/${f}`).then((r) => r.json())))
+  .then(([S, footprint, hotspots]) => start(S, footprint, hotspots))
+  .catch((e) => { document.getElementById('map').textContent = 'No se pudieron cargar los datos del mapa.'; console.error(e); });
+
+function start(S, footprint, hotspots) {
+  // Key figures from the data, so the page always matches the analysis.
+  document.getElementById('k-area').textContent = `${nf(S.footprint_km2)} km²`;
+  document.getElementById('k-ha').textContent = nf(S.footprint_km2 * 100);
+  document.getElementById('k-peak').textContent = `${nf(S.peak_km2)} km²`;
+  document.getElementById('k-peak-day').textContent = longDate(S.peak_day);
+  document.getElementById('k-natura').textContent = `${nf(S.natura_pct)} %`;
+  document.getElementById('k-dice').textContent = nf(S.dice, 3);
+  document.getElementById('k-prov').textContent = Object.entries(S.provinces).map(([k, v]) => `${k} ${nf(v)} km²`).join(' · ');
+  document.getElementById('k-munis').textContent = S.municipalities;
+  const [fd, ft] = S.first_detection.split(' ');
+  document.getElementById('k-first').textContent = `${longDate(fd)}, ${ft}`;
+
+  const bounds = L.latLngBounds(S.bounds);
+  const map = L.map('map', { zoomSnap: 0.5, minZoom: 8, maxBounds: bounds.pad(1) });
+  map.fitBounds(bounds.pad(0.02));
+  L.control.scale({ imperial: false, position: 'topleft' }).addTo(map);
+  map.attributionControl.setPrefix('<a href="https://leafletjs.com">Leaflet</a>');
+
+  const bases = {
+    sat: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 18, attribution: 'Imagen © Esri, Maxar, Earthstar Geographics' }),
+    map: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19, subdomains: 'abcd', attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · © CARTO' }),
+  };
+  bases.sat.addTo(map);
+  document.querySelectorAll('input[name=base]').forEach((r) => r.addEventListener('change', () => {
+    Object.entries(bases).forEach(([k, layer]) => (k === r.value ? layer.addTo(map) : map.removeLayer(layer)));
+  }));
+
+  // Burned area up to the chosen day: one transparent image per day.
+  const area = L.imageOverlay(`data/day_${String(S.days).padStart(2, '0')}.png`, bounds, { opacity: 0.85, interactive: false });
+  for (let k = 1; k <= S.days; k++) new Image().src = `data/day_${String(k).padStart(2, '0')}.png`; // preload
+
+  const fp = L.geoJSON(footprint, { style: { color: "#ffffff", weight: 1, fill: false, opacity: 0.8 }, interactive: false });
+
+  const renderer = L.canvas({ padding: 0.3 });
+  const groups = Array.from({ length: S.days }, () => L.layerGroup());
+  hotspots.forEach(([lon, lat, d, t, frp]) => {
+    if (d < 1 || d > S.days) return;
+    L.circleMarker([lat, lon], { renderer, radius: 2.2, weight: 0.4, color: "#222", fillColor: S.colors[d - 1], fillOpacity: 0.95 })
+      .bindPopup(`<b>Foco de calor</b><br>${longDate(S.daily[d - 1].date)}, ${t} (hora local)<br>Potencia radiativa: ${nf(frp, 1)} MW`)
+      .addTo(groups[d - 1]);
+  });
+  const hs = L.layerGroup(groups);
+
+  const [lon0, lat0] = S.first_lonlat;
+  const star = L.marker([lat0, lon0], { icon: L.divIcon({ className: '', html: '<div style="font-size:26px;line-height:26px;color:#fff;text-shadow:0 0 3px #000">★</div>', iconSize: [26, 26], iconAnchor: [13, 13] }) })
+    .bindPopup(`<b>Primera detección por satélite</b><br>${longDate(fd)}, ${ft} (hora local)`);
+
+  const toggles = { 'l-area': area, 'l-hs': hs, 'l-fp': fp };
+  const sync = () => Object.entries(toggles).forEach(([id, layer]) => (document.getElementById(id).checked ? layer.addTo(map) : map.removeLayer(layer)));
+  Object.keys(toggles).forEach((id) => document.getElementById(id).addEventListener('change', sync));
+  sync();
+  star.addTo(map);
+
+  // Day slider.
+  const slider = document.getElementById('day');
+  slider.max = S.days;
+  slider.value = S.days;
+  const ticks = document.getElementById('ticks');
+  ticks.style.setProperty('--n', S.days);
+  S.daily.forEach((d, i) => { const el = document.createElement('i'); el.textContent = Number(d.date.slice(8)); el.style.borderColor = S.colors[i]; ticks.append(el); });
+
+  const show = (k) => {
+    const d = S.daily[k - 1];
+    area.setUrl(`data/day_${String(k).padStart(2, '0')}.png`);
+    groups.forEach((g, i) => (i < k ? hs.addLayer(g) : hs.removeLayer(g)));
+    document.getElementById('r-day').textContent = longDate(d.date);
+    document.getElementById('r-cum').textContent = `${nf(d.cum_km2)} km²`;
+    document.getElementById('r-hs').textContent = nf(d.hotspots);
+  };
+  slider.addEventListener('input', () => { stop(); show(Number(slider.value)); });
+  show(S.days);
+
+  const btn = document.getElementById('play');
+  let timer = null;
+  function stop() { clearInterval(timer); timer = null; btn.textContent = '▶'; btn.setAttribute('aria-label', 'Reproducir el avance'); }
+  btn.addEventListener('click', () => {
+    if (timer) return stop();
+    let k = Number(slider.value) >= S.days ? 0 : Number(slider.value);
+    btn.textContent = '❚❚'; btn.setAttribute('aria-label', 'Pausar');
+    const step = () => { k += 1; slider.value = k; show(k); if (k >= S.days) stop(); };
+    step();
+    timer = setInterval(step, 1100);
+  });
+}
+</script>
+</body>
+</html>
